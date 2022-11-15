@@ -1,4 +1,4 @@
-
+import re
 
 class KijijiAd():
 
@@ -10,6 +10,7 @@ class KijijiAd():
 
         self.__locate_info()
         self.__parse_info()
+        self.__parse_mileage()
 
     def __locate_info(self):
         # Locate ad information
@@ -28,7 +29,7 @@ class KijijiAd():
 
     def __parse_info(self):
         # Parse Details and Date information
-        self.info["Details"] = self.info["Details"].text.strip() \
+        self.info["Details"] = ' '.join(self.info["Details"].text.strip().split()) \
             if self.info["Details"] is not None else ""
         self.info["Date"] = self.info["Date"].text.strip() \
             if self.info["Date"] is not None else ""
@@ -40,15 +41,28 @@ class KijijiAd():
                     self.info[key] = 'http://www.kijiji.ca' + value
 
                 elif key == "Description":
-                    self.info[key] = value.text.strip() \
+                    value = value.text.strip() \
                         .replace(self.info["Details"], '')
+                    value = ' '.join(value.split())
+                    self.info[key] = value
 
                 elif key == "Location":
-                    self.info[key] = value.text.strip() \
+                    value = value.text.strip() \
                         .replace(self.info["Date"], '')
+                    value = ' '.join(value.split())
+                    self.info[key] = value
                     
                 elif key == "Image":
                     self.info[key] = '<img src =\"' + (self.info["DataSource"]) + '\"/>'
 
                 elif key not in ["DataSource", "Details", "Date"]:
                     self.info[key] = value.text.strip()
+
+    def __parse_mileage(self):
+        details = self.info["Details"]
+        if details:
+            d = re.findall('([^ \r\n]+) km?([\r\n]| |$)', details, re.IGNORECASE)
+            if len(d):
+                mileage = d[0][0].replace(',', '')
+                mileage = int(mileage)
+                self.info["Mileage"] = mileage

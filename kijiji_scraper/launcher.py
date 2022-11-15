@@ -57,19 +57,6 @@ def main():
         email_config, urls_to_scrape = ({},{})
         # Do not try to send mail if no config file is loaded
         args.skipmail=True
-
-    # Initialize the KijijiScraper and email client
-    ads_filepath=None
-    if not args.all:
-        if args.ads: ads_filepath=args.ads
-        else:
-            # Find default ads.json file in PWD directory for retro-compatibility
-            if os.path.exists("ads.json"): ads_filepath="ads.json"
-            # Find default ads.json file in env variables
-            if not ads_filepath:
-                ads_filepath = find_file(['HOME', 'XDG_CONFIG_HOME', 'APPDATA'], ['.kijiji_scraper/ads.json'], default_content='{}', create=True)
-        print("Ads file: %s"%ads_filepath)
-    kijiji_scraper = KijijiScraper(ads_filepath)
    
     # Overwrite search URLs if specified
     if args.url: urls_to_scrape = [{'url':u} for u in args.url]
@@ -83,13 +70,29 @@ def main():
     for url_dict in urls_to_scrape:
         url = url_dict.get("url")
         exclude_words = url_dict.get("exclude", [])
+        category = url_dict.get("category") or url.split('/')[5]
+        year = url_dict.get("year")
+
+        if category is None:
+            print("Please specify the category in config file")
+
+        # Initialize the KijijiScraper
+        ads_filepath=None
+        if not args.all:
+            if args.ads: ads_filepath=args.ads
+            else:
+                # Find default ads.json file in env variables
+                if not ads_filepath:
+                    ads_filepath = find_file(['HOME', 'XDG_CONFIG_HOME', 'APPDATA'], [f'.kijiji_scraper/ads-{category}.json'], default_content='{}', create=True)
+            print("Ads file: %s"%ads_filepath)
+        kijiji_scraper = KijijiScraper(ads_filepath)
 
         print("Scraping: %s"%url)
         if len(exclude_words):
             print("Excluding: " + ", ".join(exclude_words))
 
         kijiji_scraper.set_exclude_list(exclude_words)
-        ads, email_title = kijiji_scraper.scrape_kijiji_for_ads(url)
+        ads, email_title = kijiji_scraper.scrape_kijiji_for_ads(url, year)
 
         info_string = "Found %s new ads"%len(ads) \
             if len(ads) != 1 else "Found 1 new ad"
@@ -106,7 +109,7 @@ def main():
             print("Email sent to %s"%email_client.receiver)
         else: print("No email sent")
 
-    if ads_filepath: kijiji_scraper.save_ads()
+        if ads_filepath: kijiji_scraper.save_ads()
 
 def get_ads_summary(ads):
     string=''

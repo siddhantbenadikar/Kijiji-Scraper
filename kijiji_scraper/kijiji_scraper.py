@@ -7,7 +7,7 @@ from pathlib import Path
 
 class KijijiScraper():
 
-    def __init__(self, filename="ads.json"):
+    def __init__(self, filename):
         self.filepath = Path().absolute().joinpath(filename) if filename else None
         self.all_ads = {}
         self.new_ads = {}
@@ -43,7 +43,7 @@ class KijijiScraper():
         self.exclude_list = self.words_to_lower(exclude_words)
 
     # Pulls page data from a given kijiji url and finds all ads on each page
-    def scrape_kijiji_for_ads(self, url):
+    def scrape_kijiji_for_ads(self, url, year):
         self.new_ads = {}
 
         email_title = None
@@ -57,7 +57,7 @@ class KijijiScraper():
                 email_title = self.get_email_title(soup)
 
             # Find ads on the page
-            self.find_ads(soup)
+            self.find_ads(soup, year)
 
             # Set url for next page of ads
             url = soup.find('a', {'title': 'Next'})
@@ -66,7 +66,7 @@ class KijijiScraper():
 
         return self.new_ads, email_title
 
-    def find_ads(self, soup):
+    def find_ads(self, soup, year):
         # Finds all ad trees in page html.
         kijiji_ads = soup.find_all("div", {"class": "search-item regular-ad"})
 
@@ -89,6 +89,8 @@ class KijijiScraper():
         # Create a dictionary of all ads with ad id being the key
         for ad in kijiji_ads:
             kijiji_ad = KijijiAd(ad)
+            if year:
+                kijiji_ad.info["Year"] = year
 
             # If any of the title words match the exclude list then skip
             if not [False for match in self.exclude_list

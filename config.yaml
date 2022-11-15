@@ -22,12 +22,13 @@ smtp port: 465
 # There are a couple examples below which you will want to remove/replace with your own.
 # You can add as many URLs as you wish to scrape.
 
-# Just a URL to scrape
-- url: https://www.kijiji.ca/b-bikes/alberta/kona-stinky/k0c644l9003?price=__700
-
 # Url with exclude words given
-- url: https://www.kijiji.ca/b-cars-trucks/alberta/tesla-new__used/c174l9003a54a49
+- url: https://www.kijiji.ca/b-cars-trucks/calgary/honda-civic/2006/k0c174l1700199a68
   exclude:
     - wanted
     - gas
     - base
+  year: 2006
+
+- url: https://www.kijiji.ca/b-cars-trucks/calgary/honda-civic/2005/k0c174l1700199a68
+  year: 2005
