@@ -2,7 +2,7 @@ import re
 
 class KijijiAd():
 
-    def __init__(self, ad):
+    def __init__(self, ad, year):
         self.title = ad.find('a', {"class": "title"}).text.strip()
         self.id = ad['data-listing-id']
         self.ad = ad
@@ -11,6 +11,10 @@ class KijijiAd():
         self.__locate_info()
         self.__parse_info()
         self.__parse_mileage()
+        self.__parse_price()
+        # add year info
+        if year:
+            self.info["Year"] = year
 
     def __locate_info(self):
         # Locate ad information
@@ -66,3 +70,10 @@ class KijijiAd():
                 mileage = d[0][0].replace(',', '')
                 mileage = int(mileage)
                 self.info["Mileage"] = mileage
+
+    def __parse_price(self):
+        price = self.info["Price"]
+        # edge case when price is 'please contact'
+        # check if price contains a digit, if it does assume it's a number
+        if bool(re.search(r'\d', price)):
+            self.info["PriceFloat"] = float(re.sub(r'[^\d.]', '', price))

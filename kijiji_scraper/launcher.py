@@ -35,23 +35,23 @@ def main():
     
     # Handle custom config file
     if args.conf:
-        filepath=args.conf
+        config_filepath=args.conf
     else:
         filename=".kijiji_scraper/config.yaml"
         # Find the default config file from env varibles
-        filepath = find_file(['HOME', 'XDG_CONFIG_HOME', 'APPDATA'], [filename])
-        if not filepath:
+        config_filepath = find_file(['HOME', 'XDG_CONFIG_HOME', 'APPDATA'], [filename])
+        if not config_filepath:
             # Find the default config file in the install directory
             abspath = os.path.abspath(__file__)
             dname = os.path.dirname(os.path.dirname(abspath))
-            filepath=os.path.join(dname, "config.yaml")
-            if not os.path.exists(filepath):
-                filepath=None
-    if filepath:
+            config_filepath=os.path.join(dname, "config.yaml")
+            if not os.path.exists(config_filepath):
+                config_filepath=None
+    if config_filepath:
         # Get config values
-        with open(filepath, "r") as config_file:
+        with open(config_filepath, "r") as config_file:
             email_config, urls_to_scrape = yaml.safe_load_all(config_file)
-        print("Loaded config file: %s"%filepath)
+        print("Loaded config file: %s"%config_filepath)
     else:
         print("No config file loaded")
         email_config, urls_to_scrape = ({},{})
@@ -71,45 +71,51 @@ def main():
         url = url_dict.get("url")
         exclude_words = url_dict.get("exclude", [])
         category = url_dict.get("category") or url.split('/')[5]
-        year = url_dict.get("year")
+        years = url_dict.get("years")
 
         if category is None:
             print("Please specify the category in config file")
 
-        # Initialize the KijijiScraper
-        ads_filepath=None
-        if not args.all:
-            if args.ads: ads_filepath=args.ads
-            else:
-                # Find default ads.json file in env variables
-                if not ads_filepath:
-                    ads_filepath = find_file(['HOME', 'XDG_CONFIG_HOME', 'APPDATA'], [f'.kijiji_scraper/ads-{category}.json'], default_content='{}', create=True)
-            print("Ads file: %s"%ads_filepath)
-        kijiji_scraper = KijijiScraper(ads_filepath)
+        # Start with year placeholder and keep replacing the year in the url
+        prevYear = "<year>"
+        for year in years:
+            # Initialize the KijijiScraper
+            currYear = str(year)
+            url = url.replace(prevYear, currYear)
+            ads_filepath=None
+            if not args.all:
+                if args.ads: ads_filepath=args.ads
+                else:
+                    # Find default ads.json file in env variables
+                    if not ads_filepath:
+                        ads_filepath = find_file(['HOME', 'XDG_CONFIG_HOME', 'APPDATA'], [f'.kijiji_scraper/ads-{category}.json'], default_content='{}', create=True)
+                print("Ads file: %s"%ads_filepath)
+            kijiji_scraper = KijijiScraper(ads_filepath)
 
-        print("Scraping: %s"%url)
-        if len(exclude_words):
-            print("Excluding: " + ", ".join(exclude_words))
+            print("Scraping: %s"%url)
+            if len(exclude_words):
+                print("Excluding: " + ", ".join(exclude_words))
 
-        kijiji_scraper.set_exclude_list(exclude_words)
-        ads, email_title = kijiji_scraper.scrape_kijiji_for_ads(url, year)
+            kijiji_scraper.set_exclude_list(exclude_words)
+            ads, email_title = kijiji_scraper.scrape_kijiji_for_ads(url, year)
 
-        info_string = "Found %s new ads"%len(ads) \
-            if len(ads) != 1 else "Found 1 new ad"
-        print(info_string)
+            info_string = "Found %s new ads"%len(ads) \
+                if len(ads) != 1 else "Found 1 new ad"
+            print(info_string)
 
-	    # Print ads summary list 
-        sys.stdout.buffer.write(get_ads_summary(ads).encode('utf-8'))
-        # Send email
-        if not args.skipmail and len(ads):
-            email_client = EmailClient(email_config)
-            # Overwrite email recepeients if specified
-            if args.email: email_client.receiver=','.join(args.email)
-            email_client.mail_ads(ads, email_title)
-            print("Email sent to %s"%email_client.receiver)
-        else: print("No email sent")
+            # Print ads summary list 
+            sys.stdout.buffer.write(get_ads_summary(ads).encode('utf-8'))
+            # Send email
+            if not args.skipmail and len(ads):
+                email_client = EmailClient(email_config)
+                # Overwrite email recepeients if specified
+                if args.email: email_client.receiver=','.join(args.email)
+                email_client.mail_ads(ads, email_title)
+                print("Email sent to %s"%email_client.receiver)
+            else: print("No email sent")
 
-        if ads_filepath: kijiji_scraper.save_ads()
+            if ads_filepath: kijiji_scraper.save_ads()
+            prevYear = currYear
 
 def get_ads_summary(ads):
     string=''
@@ -188,15 +194,15 @@ smtp port: 465
 #     - base
 """
     # Find file or create it
-    filepath=find_file(['HOME', 'XDG_CONFIG_HOME', 'APPDATA'], [".kijiji_scraper/config.yaml"], default_content=default_config, create=True)
+    config_filepath=find_file(['HOME', 'XDG_CONFIG_HOME', 'APPDATA'], [".kijiji_scraper/config.yaml"], default_content=default_config, create=True)
     # Open with editor
     if os.name == 'nt':
-        os.system(filepath)
+        os.system(config_filepath)
     elif 'EDITOR' in os.environ:
-        os.system('%s %s' % (os.getenv('EDITOR'), filepath))
+        os.system('%s %s' % (os.getenv('EDITOR'), config_filepath))
     elif which('gedit') is not None:
-        os.system('gedit %s'%filepath)
+        os.system('gedit %s'%config_filepath)
     elif which('nano') is not None:
-        os.system('nano %s'%filepath)
+        os.system('nano %s'%config_filepath)
     elif which('vim') is not None:
-        os.system('vim %s'%filepath)
+        os.system('vim %s'%config_filepath)

@@ -83,14 +83,12 @@ class KijijiScraper():
                 "div", {"class": "search-item showcase top-feature"})
 
         for ad in third_party_ads:
-            third_party_ad_id = KijijiAd(ad).id
+            third_party_ad_id = KijijiAd(ad, None).id
             self.third_party_ads.append(third_party_ad_id)
 
         # Create a dictionary of all ads with ad id being the key
         for ad in kijiji_ads:
-            kijiji_ad = KijijiAd(ad)
-            if year:
-                kijiji_ad.info["Year"] = year
+            kijiji_ad = KijijiAd(ad, year)
 
             # If any of the title words match the exclude list then skip
             if not [False for match in self.exclude_list

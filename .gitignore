@@ -5,3 +5,4 @@ ads.json
 kijiji_scraper.egg-info/*
 dist/*
 build/*
+.kijiji_scraper
