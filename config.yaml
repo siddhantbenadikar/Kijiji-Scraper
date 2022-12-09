@@ -24,8 +24,4 @@ smtp port: 465
 
 # Url with exclude words given
 - url: https://www.kijiji.ca/b-cars-trucks/calgary/honda-civic/<year>/k0c174l1700199a68
-  exclude:
-    - wanted
-    - gas
-    - base
   years: [2005, 2006, 2007, 2008, 2009, 2010]

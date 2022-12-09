@@ -28,7 +28,7 @@ class KijijiAd():
         self.info["Date"] = self.ad.find(
             'span', {"class": "date-posted"})
         self.info["Location"] = self.ad.find('div', {"class": "location"})
-        self.info["Price"] = self.ad.find('div', {"class": "price"})
+        self.info["PriceString"] = self.ad.find('div', {"class": "price"})
         self.info["DataSource"] = str(self.ad.find('img').get('data-src'))
 
     def __parse_info(self):
@@ -72,8 +72,8 @@ class KijijiAd():
                 self.info["Mileage"] = mileage
 
     def __parse_price(self):
-        price = self.info["Price"]
+        price = self.info["PriceString"]
         # edge case when price is 'please contact'
         # check if price contains a digit, if it does assume it's a number
         if bool(re.search(r'\d', price)):
-            self.info["PriceFloat"] = float(re.sub(r'[^\d.]', '', price))
+            self.info["Price"] = float(re.sub(r'[^\d.]', '', price))
